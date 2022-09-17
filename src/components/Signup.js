@@ -1,81 +1,73 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import validator from 'validator';
+import validate from "../utils/validate";
+import { signupURL } from "../utils/Constant";
+import { withRouter } from 'react-router';
 
 class Signup extends React.Component{
-    constructor(){
-        super()
-        this.state = {
+    state = {
+        username:"",
+        email:"",
+        password:"",
+        user:"",
+        errors:{
             username:"",
             email:"",
-            password:"",
-            error:""
-        }
+            password:""
+        },
+    };
+    handleChange = (event) => {
+        let {name,value} = event.target;
+        let errors={...this.state.errors}
+        validate(errors,name,value);
+        console.log(errors, "=======")
+        this.setState({[name]:value, errors});
     }
-    userData = (event) => {
-        this.setState({[event.target.name]:event.target.value});
-    }
-    submitUserRegisterData = (event) => {
+    handleSubmit = (event) => {
         event.preventDefault();
-        let {username,email,password} = this.state;
-        // if(!email){
-        //     this.setState({error:"Email is required"});
-        // } else if(validator.isEmail(email)){
-        //             this.setState({error:""})
-        //         } else {
-        //             this.setState({error:"Email is is not valid"});
-        //         }
-        //     }
-        // }    
-        // if(!username){
-        //     this.setState({error:"Username is required"});
-
-        // } else {
-        //     if(validator.isAlpha(username)){
-        //         this.setState({error:"Enter vaild Username"});
-        //     } else {
-        //         this.setState({error:""})
-        //     }
-        // } 
-        // if(!password){
-        //     this.setState({error:"Password is requried."});
-
-        // } else {
-        //     this.setState({error:""})
-        // }
-    }
-       
-    userRegister = () => {
-        let {username,email,password} = this.state;
-        fetch('https://mighty-oasis-08080.herokuapp.com/api/users', {
-            method:'POST',
-            headers:{'Content-Type': ' application/json'},
+        let {username,email,password} = this.state
+        fetch(signupURL, {
+            method:"POST",
+            headers:{
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
-                user: { username, email, password },
-              })
+                user:{username,email,password}
+            })
+        }).then((res) => {
+            if(!res.ok) {
+                return res.json().then(({errors}) => {
+                    return Promise.reject(errors);
+                });
+            }
+            return res.json();
+        }).then(({user}) => {
+            this.props.updateUser(user);
+            this.setState({username:'',email:'',password:''})
+            this.props.history.push('/');
         })
-        .then((res) => res.json()).then((data) => console.log(data))
-        .catch((err) => console.log(err))
-    }
+        .catch((errors) => {
+            console.log(errors, "------after fetch----")
+            this.setState({errors:errors})
+        })
+    }  
     render(){
-        console.log(this.state)
+        const {username,email,password,errors} = this.state;
         return(
             <div className="mt-10">
                 <div className="text-center mb-3">
                     <h1 className="text-4xl text-gray-600 font-medium">Sign Up</h1>
                     <p className="mt-2 text-green-500"><NavLink to="/login">Have an Account?</NavLink></p>
-                    <ul>
-                        {
-                            this.state.error ? <li className="text-red-500 font-medium">{this.state.error}</li> : ""
-                        }
-                    </ul>
                 </div>
                 <div className="w-1/2 mx-auto text-right">
-                    <form onSubmit={this.submitUserRegisterData}>
-                        <input type="text" name="username" className="border-2 rounded-xl w-full my-3 py-3 px-5" value = {this.state.username} placeholder="Username" onChange={this.userData}/>
-                        <input type="text" name="email" className="border-2 rounded-xl w-full my-3 py-3 px-5" value = {this.state.email} placeholder="Email" onChange={this.userData}/>
-                        <input type="text" name="password" className="border-2 rounded-xl w-full my-3 py-3 px-5" value = {this.state.password} placeholder="Password" onChange={this.userData}/>
-                        <button className="bg-green-500 rounded-xl font-medium py-3 px-5 text-gray-50">Sign up</button>
+                    <form onSubmit={this.handleSubmit}>
+                        <input type="text" name="username" className="border-2 rounded-xl w-full my-3 py-3 px-5" value = {username} placeholder="Username" onChange={this.handleChange}/>
+                        <p className="text-center text-red-500">{errors.username}</p>
+                        <input type="text" name="email" className="border-2 rounded-xl w-full my-3 py-3 px-5" value = {email} placeholder="Email" onChange={this.handleChange}/>
+                        <p className="text-center text-red-500">{errors.email}</p>
+                        <input type="text" name="password" className="border-2 rounded-xl w-full my-3 py-3 px-5" value = {password} placeholder="Password" onChange={this.handleChange}/>
+                        <p className="text-center text-red-500">{errors.password}</p>
+                        <button  className="bg-green-500 rounded-xl font-medium py-3 px-10 text-center text-gray-50">Sign up</button>
                     </form>
                 </div>
             </div>
@@ -83,4 +75,4 @@ class Signup extends React.Component{
     }
 }
 
-export default Signup;
+export default withRouter(Signup);

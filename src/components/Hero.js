@@ -1,81 +1,109 @@
 import React from "react";
-import Articles from "./Articles";
+import Banner from "./Banner";
+import FeedNav from "./FeedNav";
+import Pagination from "./Pagination";
+import Posts from "./Posts";
 import Sidebar from "./Sidebar";
+import { articlesURL,localstoragkey } from "../utils/Constant";
 
 class Hero extends React.Component {
-    constructor(){
-        super()
-        this.state = {
-            articles:[],
-            tag:"",
-            error:"",
-            startcount: 0,
-            endcount:10,
-            count:1
-        }
+    state = {
+        articles:[],
+        error:"",
+        articlesCount:0,
+        articlesPerPage:10,
+        activePage:1,
+        activeTab:""
     }
+
+    emptyTab = () => {
+        this.setState({ activeTab : "" });
+    }
+
+    addTab = (tab) => {
+        this.setState({activeTab:tab});
+    }
+
     componentDidMount(){
-        this.getAllArticles();
+       this.fetchData();
     }
-    componentDidUpdate(prevProps, prevState){
-        if(prevState.tag !== this.state.tag){
-            this.getFilterArticles();
+
+    componentDidUpdate(_prevProps, prevState){
+        if(prevState.activePage !== this.state.activePage || prevState.activeTab !== this.state.activeTab ){
+            this.fetchData();
         }
     }
-    getAllArticles = () => {
-        fetch(`https://mighty-oasis-08080.herokuapp.com/api/articles`).then((res) => res.json()).then((data) => this.setState({articles:data.articles}))
+
+    fetchData = () =>{
+        let limit = this.state.articlesPerPage;
+        let offset =  (this.state.activePage - 1) * limit;
+        let tag = this.state.activeTab;
+        let storagekey = localStorage[localstoragkey];
+    
+        fetch(articlesURL, {
+            method:"GET",
+            headers: {
+                Authorization: `Token ${storagekey}`,
+            }
+        }).then((res) => {
+            if(!res.ok){
+                throw new Error(res.statusText);
+            }
+            return res.json()
+        }).then((data) => this.setState({articles:data.articles, articlesCount:data.articlesCount}))
+        .catch((error) => this.setState({error:"Not able to fetch articles!"}));  
     }
-    getFilterArticles = () =>{
-        fetch(`https://mighty-oasis-08080.herokuapp.com/api/articles?tag=${this.state.tag}`).then((res) => res.json()).then((data) => this.setState({articles:data.articles}))
+
+    updateCurrentPageIndex = (index) => {
+        this.setState({activePage:index},this.fetchData);
     }
-    getTag = (tag) => {
-        this.setState({tag})
+
+    handelFavoriteArticle = (slug) => {
+        let storagekey = localStorage[localstoragkey];
+        fetch(articlesURL + `/${slug}/favorite`, {
+            method:"POST",
+            headers:{
+                Authorization: `Token ${storagekey}`,
+            }
+        }).then((res) => res.json())
+        .then((data) => this.fetchData());
     }
-    nextTenArticles = (number) => {
-        let {count, startcount,endcount} = this.state;
-        if(number > count){
-            startcount = startcount + 10;
-            endcount = endcount + 10;
-            count = count + 1;
+
+    handelRemoveFavoriteArticle = (slug) => {
+        let storagekey = localStorage[localstoragkey];
+        fetch(articlesURL + `/${slug}/favorite`, {
+            method:"DELETE",
+            headers:{
+                Authorization: `Token ${storagekey}`,
+            }
+        }).then((res) => res.json())
+        .then((data) => console.log(data));
+    }
+
+    handleClickToggle = (slug,favorited) => {
+        if(favorited){
+            this.handelRemoveFavoriteArticle(slug);
         } else {
-            startcount = startcount - 10;
-            endcount = endcount - 10;
-            count = count - 1;
+            this.handelFavoriteArticle(slug);
         }
-        this.setState({
-            count,
-            startcount,
-            endcount
-        })
     }
+
     render(){
-        let onlyTenArticles = this.state.articles.slice(this.state.startcount,this.state.endcount);
-        let pageNumber = [];
-        for (let index = 1; index <= this.state.articles.length / 10; index++) {
-            pageNumber.push(index);
-        }
-        console.log(this.state.tag)
+        let {error,articles,articlesCount,articlesPerPage,activePage,activeTab} = this.state;
         return(
-            <section>
-                <div className="bg-green-500">
-                    <div className="text-center py-10 container w-10/12 mx-auto">
-                        <h1 className="font-bold text-6xl text-gray-50">Blog</h1>
+            <main>
+                <Banner/>
+                <FeedNav activeTab={activeTab} emptyTab={this.emptyTab}/>
+                <section className=" flex container w-10/12 px-3 mx-auto">
+                    <div className="w-3/4">
+                        <Posts articles={articles} error={error} handleClickToggle={this.handleClickToggle}/>
+                        <Pagination articlesCount={articlesCount} articlesPerPage={articlesPerPage} activePage={activePage} updateCurrentPageIndex={this.updateCurrentPageIndex}/>
                     </div>
-                </div>
-                <div className="flex container w-10/12 mt-10 mx-auto">
-                    <Articles articles={onlyTenArticles} tag={this.state.tag}/>
-                    <Sidebar getTag={this.getTag} />
-                </div>
-                <div className="container w-3/4 my-10 mx-auto">
-                    <ul className="flex">
-                        {
-                            pageNumber.map(ele => (
-                                <li key={ele} className="p-2 border-2 border-green-500" onClick={() => this.nextTenArticles(ele)}>{ele}</li>
-                            ))
-                        }
-                    </ul>
-                </div>
-            </section> 
+                    <div className="w-1/4">
+                        <Sidebar  addTab={this.addTab}/>
+                    </div>
+                </section>
+            </main> 
         )
     } 
 }

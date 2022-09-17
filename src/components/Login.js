@@ -1,59 +1,65 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import validator from 'validator';
+import validate from '../utils/validate';
+import { loginURL } from "../utils/Constant";
+import { withRouter } from 'react-router';
 
 class Login extends React.Component{
-    constructor(){
-        super()
-        this.state = {
+    state = {
+        email:"",
+        password:"",
+        errors:{
             email:"",
             password:"",
-            error:""
-        }
+        },
+    };
+    handleChange = (event) => {
+       let {name,value} = event.target;
+       let errors={...this.state.errors}
+       validate(errors,name,value);
+       this.setState({[name]:value, errors: {...errors}});
     }
-    userLoginData = (event) => {
-        this.setState({email:event.target.value,
-        password:event.target.value});
-    }
-    submitUserData = (event) => {
+    handleSubmit = (event) => {
         event.preventDefault();
-        let {email, password} = this.state;
-        if(!email) {
-            this.setState({error:"Email is required"});
-        } else if(validator.isEmail(email)) {
-            this.setState({error:"plz enter vaild email"});
-        } else {
-            this.setState({error:""});
-        }
-        if(!password){
-            this.setState({error:"password is required"});
-        } else {
-            this.setState({error:""});
-        }
-        if(!email && !password){
-            this.setState({error:"Email and Password is required"});
-        } else {
-            this.setState({error:""});
-        }
+        let {email,password} = this.state;
+        fetch(loginURL, {
+            method:"POST",
+            headers:{
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                user:{email,password}
+            })
+        }).then(async (res) => {
+            if(!res.ok) {
+                const { errors } = await res.json();
+                return await Promise.reject(errors);
+            }
+            return res.json();
+        }).then(({user}) =>{
+            this.props.updateUser(user);
+            this.props.history.push('/');
+        })   
+        .catch((errors) => this.setState({errors:errors}));
     }
     render(){
-        console.log(this.state.error);
+        const {email,password,errors,error} = this.state;
         return(
             <div className="mt-10">
                 <div className="text-center mb-3">
                     <h1 className="text-4xl font-medium">Sign In</h1>
                     <p className="mt-2 text-green-500"><NavLink to="/signup">Need an Account?</NavLink></p>
-                    <ul>
-                        {
-                            this.state.error ? <li className="text-red-500 font-medium">{this.state.error}</li> : ""
-                        }
-                    </ul>
                 </div>
+                {
+                    error ? <p className="text-center text-red-500">Email or Password{error}</p> :""
+                }
                 <div className="w-1/2 mx-auto text-right">
-                    <form onSubmit={this.submitUserData}>
-                        <input type="text" name="email" className="border-2 rounded-xl w-full my-3 py-3 px-4" placeholder="Email" onChange={this.userLoginData}/>
-                        <input type="text" name="password" className="border-2 rounded-xl w-full my-3 py-3 px-4" placeholder="Password" onChange={this.userLoginData}/>
-                        <button className="bg-green-500 rounded-xl font-medium py-3 px-5 text-gray-50">Sign in</button>
+                    <form onSubmit={this.handleSubmit}>
+                        <input type="text" name="email" className="border-2 rounded-xl w-full my-3 py-3 px-4" placeholder="Email" value={email} onChange={this.handleChange}/>
+                        <p className="text-center text-red-500">{errors.email}</p>
+                        <input type="text" name="password" className="border-2 rounded-xl w-full my-3 py-3 px-4" placeholder="Password" value={password} onChange={this.handleChange}/>
+                        <p className="text-center text-red-500">{errors.password}</p>
+                        <button className="bg-green-500 rounded-xl font-medium py-3 px-10 text-center text-gray-50">Sign in</button>
                     </form>
                 </div>
             </div>
@@ -61,4 +67,4 @@ class Login extends React.Component{
     }
 }
 
-export default Login;
+export default withRouter(Login);
