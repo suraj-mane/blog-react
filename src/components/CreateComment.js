@@ -1,19 +1,26 @@
-import React from "react"
+import{ React }from "react";
 import { ROOT_URL,localstoragkey } from "../utils/Constant";
 
 class CreatComment extends React.Component{
-    state = {
-        body:""
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            body:""
+        }
     }
+
     handelChange = (event) => {
-        let {name,value} = event.target;
+        const {name,value} = event.target;
         this.setState({[name]:value});
     }
+
     handelSubmit = () => {
-        let {body} = this.state;
-        let slug = this.props.slug;
-        let storagekey = localStorage[localstoragkey];
-        fetch(ROOT_URL + `articles/${slug}/comments`,{
+        const {body} = this.state;
+        const {slug} = this.props;
+        const storagekey = localStorage[localstoragkey];
+        const URL = `articles/${slug}/comments`;
+        fetch(ROOT_URL + URL,{
             method:"POST",
             headers:{
                 'Content-Type': 'application/json',
@@ -27,18 +34,17 @@ class CreatComment extends React.Component{
                 return res.json();
             }
              throw new Error('can not create new Comment!');
-        }).then((article) => {
-            console.log(article);
         })
         .catch((error) => this.setState((error)));
     }
-    render(){
+
+    render() {
         return(
             <div className="w-2/4 mx-auto mb-5">
                 <form className="relative" onSubmit={this.handelSubmit}>
-                    <textarea type="text" name="body" className="border-2 w-full rounded py-2 pl-10 my-3" rows="4" cols="50" placeholder="Write a Comment...."  onChange={this.handelChange}></textarea>
+                    <textarea className="border-2 w-full rounded py-2 pl-10 my-3" cols="50" name="body" placeholder="Write a Comment...." rows="4" type="text"   onChange={this.handelChange}/>
                     <div className="bg-gray-300 rounded p-2 text-right w-full inset-x-0 bottom-0 absolute">
-                        <button className="bg-green-500 p-1 font-semibold rounded text-gray-50">Post Comment</button>
+                        <button className="bg-green-500 p-1 font-semibold rounded text-gray-50" type="submit">Post Comment</button>
                     </div>
                 </form>
             </div>

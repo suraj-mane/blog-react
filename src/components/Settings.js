@@ -4,17 +4,20 @@ import { updateUserURL,localstoragkey } from "../utils/Constant";
 
 
 class Settings extends React.Component{
-    state ={
-        image:this.props.user.image,
-        username:this.props.user.username,
-        bio:this.props.user.bio,
-        email:this.props.user.email,
-        password:"",
-        errors:{
-            email:"",
+    constructor(props) {
+        super(props)
+        this.state ={
+            image:this.props.user.image,
+            username:this.props.user.username,
+            bio:this.props.user.bio,
+            email:this.props.user.email,
             password:"",
-        },
-        error:"",
+            errors:{
+                email:"",
+                password:"",
+            },
+            error:"",
+        }
     }
 
     handelChange = (event) => {
@@ -27,8 +30,8 @@ class Settings extends React.Component{
     
     handelSubmit = (event) => {
         event.preventDefault();
-        let storagekey = localStorage[localstoragkey];
-        let {username,email,image,bio,password} = this.state;
+        const storagekey = localStorage[localstoragkey];
+        const {username,email,image,bio,password} = this.state;
         fetch(updateUserURL,{
             method:"PUT",
             headers:{
@@ -48,6 +51,7 @@ class Settings extends React.Component{
         })
         .catch((error) => this.setState({error}));
     }
+
     render(){
         let {errors,email,username,image,bio,error} = this.state;
         return(
@@ -67,7 +71,7 @@ class Settings extends React.Component{
                     <button className="bg-green-500 px-10 py-3 rounded text-gray-50 font-semibold">Update Settings</button>
                 </form>
                 <hr className="my-3"/>
-                <button className="border-2 border-red-900 text-red-900 font-semibold py-2 px-2 mb-5 rounded" onClick={this.props.logout}>Or click here to logout</button>
+                <button className="border-2 border-red-900 text-red-900 font-semibold py-2 px-2 mb-5 rounded" type="button" onClick={this.props.logout}>Or click here to logout</button>
             </div>
         )
     }

@@ -1,5 +1,5 @@
 import React from "react";
-import { Route, Switch } from "react-router-dom";
+import { Route, Switch, withRouter } from "react-router-dom";
 import Header from "./Header";
 import Hero from "./Hero";
 import Login from "./Login";
@@ -11,22 +11,25 @@ import FullPageSpener from "./FullPageSpener";
 import NewPost from "./NewPost";
 import Profile from "./Profile";
 import Settings from "./Settings";
-import { withRouter } from 'react-router';
-
+import ErrorBoundary from "./ErrorBoundry";
 
 class App extends React.Component {
-  state = {
-    isLoggedIn:false,
-    user:null,
-    isVerifying: true,
-    isAuthor:true,
+  constructor(props){
+    super(props);
+    this.state = {
+      isLoggedIn:false,
+      user:null,
+      isVerifying: true,
+      isAuthor:true,
+    }
   }
   
   componentDidMount(){
-    let storagekey = localStorage[localstoragkey];
+    const storagekey = localStorage[localstoragkey];
+
     if(storagekey){
       fetch(userVerifyURL, {
-        method:'GET',
+        method :'GET',
         headers: {
           Authorization: `Token ${storagekey}`,
         },
@@ -38,8 +41,7 @@ class App extends React.Component {
           return Promise.reject(errors);
         })
       })
-      .then(({user}) => this.updateUser(user))
-      .catch((errors) => console.log(errors))
+      .then(({user}) => this.updateUser(user));
     } else {
       this.setState({isVerifying:false});
     }
@@ -61,26 +63,29 @@ class App extends React.Component {
   }
 
   render(){
-    let {isLoggedIn, user,isVerifying,isAuthor} = this.state;
+    const {isLoggedIn, user,isVerifying,isAuthor} = this.state;
     if(isVerifying) {
       <FullPageSpener/>
     } else {
       return (
         <>
-          <Header isLoggedIn={isLoggedIn} user={user}/>
-          {
-            isLoggedIn 
-              ? <AuthenticatedApp user={user} isAuthor={isAuthor} logout={this.logout} changeTab={this.changeTab}/> 
-              : <UnauthenticatedApp user={user} updateUser={this.updateUser}/>
-          }
+          <ErrorBoundary>
+            <Header isLoggedIn={isLoggedIn} user={user}/>
+            {
+              isLoggedIn 
+                ? <AuthenticatedApp changeTab={this.changeTab} isAuthor={isAuthor} logout={this.logout}  user={user}   /> 
+                : <UnauthenticatedApp updateUser={this.updateUser} user={user} />
+            }
+          </ErrorBoundary>
         </>
       )
     }
   }
 }
 
-function AuthenticatedApp(props){
-  return(
+function AuthenticatedApp (props) {
+
+  return 
     <Switch>
       <Route path="/" exact>
           <Hero/>
@@ -104,32 +109,30 @@ function AuthenticatedApp(props){
         <SingleArticle user={props.user}/>
       </Route>
       <Route path="*">
-          <NoMatch/>
+        <NoMatch/>
       </Route>
     </Switch>
-  )
 }
 
-function UnauthenticatedApp(props){
-  return (
+function UnauthenticatedApp (props) {
+  return 
     <Switch>
       <Route path="/" exact>
-          <Hero/>
+        <Hero/>
       </Route> 
       <Route path="/login">
-          <Login updateUser={props.updateUser}/>
+        <Login updateUser={props.updateUser}/>
       </Route>
       <Route path="/signup">
-          <Signup updateUser={props.updateUser}/>
+        <Signup updateUser={props.updateUser}/>
       </Route>
       <Route path="/article/:slug">
         <SingleArticle/>
       </Route>
       <Route path="*">
-          <NoMatch/>
+        <NoMatch/>
       </Route>
     </Switch>
-  )
 }
 
 export default withRouter(App);

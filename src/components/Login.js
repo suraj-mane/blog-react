@@ -1,27 +1,31 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink,withRouter } from "react-router-dom";
 import validate from '../utils/validate';
 import { loginURL } from "../utils/Constant";
-import { withRouter } from 'react-router';
 
 class Login extends React.Component{
-    state = {
-        email:"",
-        password:"",
-        errors:{
+    constructor(props) {
+        super(props)
+        this.state = {
             email:"",
             password:"",
-        },
-    };
+            errors:{
+                email:"",
+                password:"",
+            },
+        };
+    }
+
     handleChange = (event) => {
-       let {name,value} = event.target;
-       let errors={...this.state.errors}
+       const {name,value} = event.target;
+       const errors={...this.state.errors}
        validate(errors,name,value);
        this.setState({[name]:value, errors: {...errors}});
     }
+
     handleSubmit = (event) => {
         event.preventDefault();
-        let {email,password} = this.state;
+        const {email,password} = this.state;
         fetch(loginURL, {
             method:"POST",
             headers:{
@@ -40,8 +44,9 @@ class Login extends React.Component{
             this.props.updateUser(user);
             this.props.history.push('/');
         })   
-        .catch((errors) => this.setState({errors:errors}));
+        .catch((errors) => this.setState({errors}));
     }
+
     render(){
         const {email,password,errors,error} = this.state;
         return(
@@ -55,11 +60,11 @@ class Login extends React.Component{
                 }
                 <div className="w-1/2 mx-auto text-right">
                     <form onSubmit={this.handleSubmit}>
-                        <input type="text" name="email" className="border-2 rounded-xl w-full my-3 py-3 px-4" placeholder="Email" value={email} onChange={this.handleChange}/>
+                        <input className="border-2 rounded-xl w-full my-3 py-3 px-4" name="email" placeholder="Email" type="text" value={email} onChange={this.handleChange}/>
                         <p className="text-center text-red-500">{errors.email}</p>
-                        <input type="text" name="password" className="border-2 rounded-xl w-full my-3 py-3 px-4" placeholder="Password" value={password} onChange={this.handleChange}/>
+                        <input  className="border-2 rounded-xl w-full my-3 py-3 px-4" name="password" placeholder="Password" type="text" value={password} onChange={this.handleChange}/>
                         <p className="text-center text-red-500">{errors.password}</p>
-                        <button className="bg-green-500 rounded-xl font-medium py-3 px-10 text-center text-gray-50">Sign in</button>
+                        <button className="bg-green-500 rounded-xl font-medium py-3 px-10 text-center text-gray-50" type="button">Sign in</button>
                     </form>
                 </div>
             </div>
